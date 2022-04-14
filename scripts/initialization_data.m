@@ -17,17 +17,17 @@ small_pulley_len = 1.5; % mm
 %% Define neck Trajectory
 
 % waypoints [pitch; roll] in degrees
-wp = [ 0, -20, -20, 20, 20, -20, -20, 20, 20, -20, -20, 20, 20, -20, -20, 20, 20, -20, -20, 20, 20;
-       0, -10, -10, 10, 10, -10, -10, 10, 10, -10, -10, 10, 10, -10, -10, 10, 10, -10, -10, 10, 10];
+wp = [ 0, 45, 45, -45, -45, 0;
+       0, 45, 45, -45, -45, 0];
 
 % Uncomment this line to add the joint offset to the reference trajectory
 % Useful when computing inverse dynamics
 % wp = wp + [smiData.RevoluteJoint(3).Rz.Pos; smiData.RevoluteJoint(6).Rz.Pos];
 
 % timepoints
-tp = [0, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5];
-tp = cumsum(tp);
-%tp = 0:size(wp, 2)-1;
+%tp = [0, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5];
+%tp = cumsum(tp);
+tp = 0:size(wp, 2)-1;
 vel_bounds = zeros(size(wp));
 accel_bounds = zeros(size(wp));
 
