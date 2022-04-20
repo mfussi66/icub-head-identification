@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Info Type="StartUp" Visible="0" Icon="" File="scripts/neck_trajectory.m" Name="neck_trajectory">
+    <Extension Value="244d9d97-0d8d-43b6-9d01-8c4b10a6db68" Name="StartUpPrev" />
+</Info>
