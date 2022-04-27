@@ -11,8 +11,9 @@
 %% Specify the model name
 model = 'lumped_neck';
 
-pitch_operating_points = [-45, 0, 45]; % degrees
+pitch_operating_points = [-40, 0, 22]; % degrees
 Ts = 1e-3;
+
 %% Create the operating point specification object.
 % Create the options
 opt = findopOptions('DisplayReport','iter');
@@ -20,7 +21,7 @@ opt = findopOptions('DisplayReport','iter');
 ls = cell(1,length(pitch_operating_points));
 op_points_pitch = cell(1,length(pitch_operating_points));
 for i = 1:length(pitch_operating_points)
-   [ls{i}, op_points_pitch{i}] = linearize_pitch(model, pitch_operating_points(i), opt, 1);
+   [ls{i}, op_points_pitch{i}] = linearize_pitch(model, pitch_operating_points(i), opt, 0);
 end
 
 %% Discretize models
@@ -33,13 +34,13 @@ end
 
 %% plot of poles and zeros
 figure()
-pzmap(ld{:})
+pzmap(ls{:})
 grid on
 
 figure()
 step(ls{:}, 1)
 grid minor
-legend({'0°','10°','35°', '45°'}, 'location', 'northwest')
+legend({'-40°','0°', '22°'}, 'location', 'northwest')
 ylabel('Pitch (deg)')
 title('Step response of linearized pitch model at different operating points')
 subtitle('from pitch torque to pitch angle')
@@ -48,79 +49,40 @@ subtitle('from pitch torque to pitch angle')
 figure()
 step(ld{:}, 1)
 grid minor
-legend({'-45°','0°', '45°'}, 'location', 'northwest')
+legend({'-40°','0°', '22°'}, 'location', 'northwest')
 ylabel('Pitch (deg)')
 title('Step response of linearized pitch model at different operating points')
 subtitle('from pitch torque to pitch angle')
 
 %% print zpk form
-tol = sqrt(eps) * 10;
-minreal(zpk(ls{1}), tol)
-minreal(zpk(ls{2}), tol)
-minreal(zpk(ls{3}), tol)
-minreal(zpk(ls{4}), tol)
+zpk(ls{1})
+zpk(ls{2})
+zpk(ls{3})
 
-%% Ctrl
+mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]);
+uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.2]);
+up = ureal('unstable_pole', 8.074, 'range', [6.796, 8.2]);
 
-% define the tunable controller
-Gc = tunablePID('Gc', 'PID', Ts);
-Gc.IFormula = 'trapezoidal';
-Gc.DFormula = 'trapezoidal';
-Gc.Kp.Minimum = 0;    Gc.Kp.Maximum = inf;
-Gc.Ki.Minimum = 0;    Gc.Ki.Maximum = inf;
-Gc.Kd.Minimum = 0;    Gc.Kd.Maximum = inf;
-Gc.Tf.Minimum = 2*Ts; Gc.Tf.Maximum = 10*Ts;    % N = 1/Tf
-Gc.TimeUnit = 'seconds';
+k = 1634.4;
 
-% define requirements
-responsetime = 0.2;
-dcerror = 0.1;
-peakerror = 1.2;
+s = tf('s');
 
-peak = 0.1;
-tSettle = 1;
+tfu = k * (s - uz)/ ((s^2 - mps^2) * (s - up));
 
-d = AnalysisPoint('d1');
-Gcl0_1 = feedback(ld{1} * d * Gc, 1);
-Gcl0_1.InputName = 'r';
-Gcl0_1.OutputName = 'y1';
-Rtrack_1 = TuningGoal.Tracking('r', 'y1', responsetime, dcerror, peakerror);
-Rreject_1 = TuningGoal.StepRejection('d1', 'y1', peak, tSettle);
+%% print zpk form
+zpk(ld{1})
+zpk(ld{2})
+zpk(ld{3})
 
-d = AnalysisPoint('d2');
-Gcl0_2 = feedback(ld{2} * d * Gc, 1);
-Gcl0_2.InputName = 'r';
-Gcl0_2.OutputName = 'y';
-Rtrack_2 = TuningGoal.Tracking('r', 'y', responsetime, dcerror, peakerror);
-Rreject_2 = TuningGoal.StepRejection('d2', 'y', peak, tSettle);
+mp_z = ureal('mech_pole', 0.9922, 'range', [0.991, 0.9936]);
+uz_z = ureal('unstable_zero', 1.007, 'range', [1.0065, 1.008]);
+up_z = ureal('unstable_pole_1', 1.007, 'range', [1.0065, 1.008]);
+up2_z = ureal('unstable_pole_2', 1.008, 'range', [1.006, 1.0085]);
 
-d = AnalysisPoint('d3');
-Gcl0_3 = feedback(ld{3} * d * Gc, 1);
-Gcl0_3.InputName = 'r';
-Gcl0_3.OutputName = 'y';
-Rtrack_3 = TuningGoal.Tracking('r', 'y', responsetime, dcerror, peakerror);
-Rreject_3 = TuningGoal.StepRejection('d3', 'y', peak, tSettle);
+k = 0.0004086;
 
-aa = [Gcl0_1 Gcl0_2 Gcl0_3];
+z = tf('z');
 
-tuneopts = systuneOptions('RandomStart', 10);
+tfu_z = k * (z + 1)^2 * (z - uz_z)/ ((z - mp_z) * (z - up_z) * (z - up2_z));
 
-Gcl = systune(aa, [Rtrack_1, Rtrack_2, Rtrack_3], [Rreject_1, Rreject_2, Rreject_3], tuneopts);
-tunedValue = getTunedValue(Gcl);
-Gc = tunedValue.Gc;
-
-
-% plot results
-figure('color', 'white');
-h1 = subplot(2, 1, 1);
-h2 = subplot(2, 1, 2);
-
-stepplot(h1, Gcl);
-title('Step Response');
-grid('minor');
-
-stepplot(h2, getIOTransfer(Gcl, 'd', 'y'));
-title('Step Disturbance Rejection');
-grid('minor');
-
-linkaxes([h1 h2], 'x');
+tfu_z.Ts = 1e-3;
