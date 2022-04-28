@@ -86,3 +86,8 @@ z = tf('z');
 tfu_z = k * (z + 1)^2 * (z - uz_z)/ ((z - mp_z) * (z - up_z) * (z - up2_z));
 
 tfu_z.Ts = 1e-3;
+
+A = [0 1;-k/(eta^2 * Jt) -b/(eta^2 * Jt)]
+C = [k/eta b/eta]
+B = [0; 1/Jt]
+filter_tf = C / (s*eye(2) - A) * B
