@@ -1,2 +1,4 @@
 *.step
+*.slxc
 cache/
+slprj/
