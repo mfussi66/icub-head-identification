@@ -59,15 +59,15 @@ zpk(ls{1})
 zpk(ls{2})
 zpk(ls{3})
 
-mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]);
-uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.2]);
-up = ureal('unstable_pole', 8.074, 'range', [6.796, 8.2]);
+[z, p, k] = zpk(ls{2});
 
-k = 1634.4;
+mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
+uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
+up = ureal('unstable_pole', 8.074, 'range', [6.796, 8.1]);
 
 s = tf('s');
 
-tfu = k * (s - uz)/ ((s^2 - mps^2) * (s - up));
+tfu = uss(k * (s - uz)/ ((s^2 - mps^2) * (s - up)));
 
 %% print zpk form
 zpk(ld{1})
@@ -87,7 +87,51 @@ tfu_z = k * (z + 1)^2 * (z - uz_z)/ ((z - mp_z) * (z - up_z) * (z - up2_z));
 
 tfu_z.Ts = 1e-3;
 
-A = [0 1;-k/(eta^2 * Jt) -b/(eta^2 * Jt)]
-C = [k/eta b/eta]
-B = [0; 1/Jt]
-filter_tf = C / (s*eye(2) - A) * B
+%% Mechanical system before joint
+
+syms J1 J2 J3 J4 beta gamma b k Jt R Kt
+
+driving_pulley_inertia = 0.021 * 1e-6; %kgm^2 
+driven_pulley_inertia = 0.0913 * 1e-6; %kgm^2
+harmonic_drive_inertia = 0.3 * 1e-6; %kgm^2
+head_inertia = 0.21;
+mech_filter_k = 200;
+mech_filter_b = 20;
+timing_belt_ratio = 1.68;
+hd_ratio = 100;
+eta = beta * gamma;
+Res = 1.9;
+Ktv = 13.4 / 1000;
+Jt = J3/eta^2 + J2/(beta^2) + J1;
+
+A = [         0           1/eta             -1;
+     -k/(eta * Jt) -(b/eta^2 +Kt^2/R)/Jt   b/(eta * Jt);
+     k/(J4)    b/(J4 * eta)       -b/(J4)];
+C = [k b/eta -b];
+B = [0; Kt/Jt/R; 0];
+
+
+s = sym('s');
+mech_tf_sym = simplify(C / (s*eye(3) - A) * B);
+
+%% replace symbolic equation with values
+mech_tf_sym = subs(mech_tf_sym, ...
+               [J1 J2 J3 J4 beta gamma b k R Kt], ...
+               [driving_pulley_inertia, driven_pulley_inertia, harmonic_drive_inertia, head_inertia, timing_belt_ratio, hd_ratio, mech_filter_b, mech_filter_k Res Ktv]);
+
+As = double(subs(A,[J1 J2 J3 J4 beta gamma b k R Kt], ...
+               [driving_pulley_inertia, driven_pulley_inertia, harmonic_drive_inertia, head_inertia, timing_belt_ratio, hd_ratio, mech_filter_b, mech_filter_k Res Ktv]));
+
+Bs = double(subs(B,[J1 J2 J3 J4 beta gamma b k R Kt], ...
+               [driving_pulley_inertia, driven_pulley_inertia, harmonic_drive_inertia, head_inertia, timing_belt_ratio, hd_ratio, mech_filter_b, mech_filter_k Res Ktv]));
+
+Cs = double(subs(C,[J1 J2 J3 J4 beta gamma b k R Kt], ...
+               [driving_pulley_inertia, driven_pulley_inertia, harmonic_drive_inertia, head_inertia, timing_belt_ratio, hd_ratio, mech_filter_b, mech_filter_k Res Ktv]));
+
+Jtv = double(subs(Jt,[J1 J2 J3 J4 beta gamma b k R Kt], ...
+               [driving_pulley_inertia, driven_pulley_inertia, harmonic_drive_inertia, head_inertia, timing_belt_ratio, hd_ratio, mech_filter_b, mech_filter_k Res Ktv]));
+
+mech_tf = syms2tf(mech_tf_sym);
+
+step(mech_tf); grid on; ylabel('\tau_o (Nm)'); 
+title('\tau_i to \tau_o transfer function - DC gain=' + string(dcgain(mech_tf)))
