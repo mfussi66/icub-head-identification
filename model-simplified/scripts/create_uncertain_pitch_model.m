@@ -66,10 +66,11 @@ nominal_pole = mean(positive_poles_matrix(nominal_pole_index));
 %mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
 %uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
 
-uncertain_stable_p = ureal('stable_p', -10.08, 'range', [-10.08 * 0.95, -10.12]);
+uncertain_stable_p1 = ureal('stable_p1', -10.08, 'range', [-10.12, -10.08 * 0.95]);
+uncertain_stable_p2 = ureal('stable_p2', -60.44, 'range', [-60.47, -60.15]);
 uncertain_unstable_p = ureal('unstable_p', nominal_pole, 'range', [min(positive_poles_matrix), max(positive_poles_matrix)]);
 
-s = tf('s'); tfu = uss(2.5717e07*(s+10)/ ((s+1.555e04)*(s+64.28)*(s - uncertain_stable_p) * (s - uncertain_unstable_p)));
+s = tf('s'); tfu_pitch = uss(2.549e07*(s+10)/ ((s+1.587e04)*(s - uncertain_stable_p2)*(s - uncertain_stable_p1) * (s - uncertain_unstable_p)));
 
 %% Discretize models
 % Ts = 1e-3;

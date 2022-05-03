@@ -5,18 +5,18 @@ Gc = tunablePID('Gc', 'PID');
 Gc.Kp.Minimum = 0;    Gc.Kp.Maximum = inf;
 Gc.Ki.Minimum = 0;    Gc.Ki.Maximum = inf;
 Gc.Kd.Minimum = 0;    Gc.Kd.Maximum = inf;
-Gc.Tf.Minimum = 1 * Ts; Gc.Tf.Maximum = 20 * Ts;    % N = 1/Tf
+Gc.Tf.Minimum = 0.5 * Ts; Gc.Tf.Maximum = 20 * Ts;    % N = 1/Tf
 Gc.TimeUnit = 'seconds';
 Gc.InputName = 'e';
 Gc.OutputName = 'u';
 
 %% define requirements
-responsetime = 1;
-dcerror = 0.05;
+responsetime = 0.2;
+dcerror = 0.1;
 peakerror = 1.0;
 
 peak = 0.1;
-tSettle = 0.3;
+tSettle = 0.2;
 
 %% Create uncertain loop
 tfu_roll.InputName = 'u';
@@ -32,22 +32,22 @@ tuneopts = systuneOptions('RandomStart', 5);
 Gcl = systune(T, Rtrack, Rreject, tuneopts);
 
 tunedValue = getTunedValue(Gcl);
-Gc_pitch = tunedValue.Gc;
-Gc_pitch.InputName = 'e';
-Gc_pitch.OutputName = 'u';
+Gc_roll = tunedValue.Gc;
+Gc_roll.InputName = 'e';
+Gc_roll.OutputName = 'u';
 
-T = connect(tt, Gc_pitch, Sum, 'r','y', 'u');
+T = connect(tfu_roll, Gc_roll, Sum, 'r','y', 'u');
 S = getIOTransfer(T,'u','y');
 
 %% plot results
 figure('color', 'white');
 subplot(2,1, 1)
-step(T, 0.5);
-ylim([-0.01, 1.2])
+step(T);
+ylim([-0.01, 1.3])
 grid('minor');
 subplot(2,1, 2)
-step(S, 0.5);
+step(S);
 grid('minor');
 
 %% get discretized controller
-Gcz_pitch = c2d(Gc_pitch, Ts, 'tustin');
+Gcz_roll = c2d(Gc_roll, Ts, 'tustin');
