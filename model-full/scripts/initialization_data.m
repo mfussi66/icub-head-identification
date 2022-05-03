@@ -17,8 +17,8 @@ small_pulley_len = 1.5; % mm
 %% Define neck Trajectory
 
 % waypoints [pitch; roll] in degrees
-wp = [ 0, 45, 45, -45, -45, 0;
-       0, 45, 45, -45, -45, 0];
+wp = [ 0, 22, 22, -40, -40, 0;
+       0, 20, 20, -20, -20, 0];
 
 % Uncomment this line to add the joint offset to the reference trajectory
 % Useful when computing inverse dynamics

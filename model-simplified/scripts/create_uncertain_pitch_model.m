@@ -9,10 +9,9 @@
 % Generated on: 21-Apr-2022 15:01:24
 
 %% Specify the model name
-model = 'lumped_neck_with_motor';
+model = 'lumped_neck_with_motor_pitch';
 
 pitch_operating_points = [-40, 0, 22]; % degrees
-Ts = 1e-3;
 
 %% Create the operating point specification object.
 % Create the options
@@ -36,16 +35,6 @@ legend({'-40°','0°', '22°'}, 'location', 'northwest')
 ylabel('Pitch (deg)')
 title('Step response of linearized pitch model at different operating points')
 subtitle('from pitch torque to pitch angle')
-
-
-figure()
-step(ld{:}, 1)
-grid minor
-legend({'-40°','0°', '22°'}, 'location', 'northwest')
-ylabel('Pitch (deg)')
-title('Step response of linearized pitch model at different operating points')
-subtitle('from pitch torque to pitch angle')
-
 %% Build uncertain system
 
 % print zpk form
@@ -53,14 +42,11 @@ zpk(ls{1})
 zpk(ls{2})
 zpk(ls{3})
 
-ls2_zpk = zpk(ls{2});
-
 j = 1;
 positive_poles_matrix = [];
-for idx = 1:3
+for idx = 1:length(pitch_operating_points)
     i = 1;
-     l = zpk(ls{idx});
-    
+    l = zpk(ls{idx});
     for p = l.P{1}'
         if p > 0.0
             positive_poles_matrix(i, j) = p;
@@ -80,33 +66,44 @@ nominal_pole = mean(positive_poles_matrix(nominal_pole_index));
 %mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
 %uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
 
-uncertain_stable_p = ureal('stable_p', 10.08, 'range', [10.08 * 0.95, 10.12]);
+uncertain_stable_p = ureal('stable_p', -10.08, 'range', [-10.08 * 0.95, -10.12]);
 uncertain_unstable_p = ureal('unstable_p', nominal_pole, 'range', [min(positive_poles_matrix), max(positive_poles_matrix)]);
 
-s = tf('s'); tfu = uss(2.5717e07*(s+10)/ ((s+1.555e04)*(s+64.28)*(s + uncertain_stable_p) * (s - uncertain_unstable_p)));
+s = tf('s'); tfu = uss(2.5717e07*(s+10)/ ((s+1.555e04)*(s+64.28)*(s - uncertain_stable_p) * (s - uncertain_unstable_p)));
 
 %% Discretize models
-
-ld = cell(1, length(pitch_operating_points));
-
-for i = 1:length(pitch_operating_points)
-    ld{i} = c2d(ls{i}, Ts, 'tustin');
-end
-
+% Ts = 1e-3;
+% 
+% ld = cell(1, length(pitch_operating_points));
+% 
+% for i = 1:length(pitch_operating_points)
+%     ld{i} = c2d(ls{i}, Ts, 'tustin');
+% end
+% 
 % print zpk form
-zpk(ld{1})
-zpk(ld{2})
-zpk(ld{3})
+% zpk(ld{1})
+% zpk(ld{2})
+% zpk(ld{3})
+% 
+% mp_z = ureal('mech_pole', 0.9922, 'range', [0.991, 0.9936]);
+% uz_z = ureal('unstable_zero', 1.007, 'range', [1.0065, 1.008]);
+% up_z = ureal('unstable_pole_1', 1.007, 'range', [1.0065, 1.008]);
+% up2_z = ureal('unstable_pole_2', 1.008, 'range', [1.006, 1.0085]);
+% 
+% k = 0.0004086;
+% 
+% z = tf('z');
+% 
+% tfu_z = k * (z + 1)^2 * (z - uz_z)/ ((z - mp_z) * (z - up_z) * (z - up2_z));
+% 
+% tfu_z.Ts = 1e-3;
 
-mp_z = ureal('mech_pole', 0.9922, 'range', [0.991, 0.9936]);
-uz_z = ureal('unstable_zero', 1.007, 'range', [1.0065, 1.008]);
-up_z = ureal('unstable_pole_1', 1.007, 'range', [1.0065, 1.008]);
-up2_z = ureal('unstable_pole_2', 1.008, 'range', [1.006, 1.0085]);
 
-k = 0.0004086;
+% figure()
+% step(ld{:}, 1)
+% grid minor
+% legend({'-40°','0°', '22°'}, 'location', 'northwest')
+% ylabel('Pitch (deg)')
+% title('Step response of linearized pitch model at different operating points')
+% subtitle('from pitch torque to pitch angle')
 
-z = tf('z');
-
-tfu_z = k * (z + 1)^2 * (z - uz_z)/ ((z - mp_z) * (z - up_z) * (z - up2_z));
-
-tfu_z.Ts = 1e-3;

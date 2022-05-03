@@ -19,10 +19,10 @@ peak = 0.1;
 tSettle = 0.3;
 
 %% Create uncertain loop
-tfu.InputName = 'u';
-tfu.OutputName = 'y';
+tfu_pitch.InputName = 'u';
+tfu_pitch.OutputName = 'y';
 Sum = sumblk('e = r - y');
-T = connect(tfu, Gc, Sum,'r','y', 'u');
+T = connect(tfu_pitch, Gc, Sum,'r','y', 'u');
 Rtrack = TuningGoal.Tracking('r', 'y', responsetime, dcerror, peakerror);
 Rreject = TuningGoal.StepRejection('u', 'y', peak, tSettle);
 
@@ -32,11 +32,11 @@ tuneopts = systuneOptions('RandomStart', 5);
 Gcl = systune(T, Rtrack, Rreject, tuneopts);
 
 tunedValue = getTunedValue(Gcl);
-Gc = tunedValue.Gc;
-Gc.InputName = 'e';
-Gc.OutputName = 'u';
+Gc_roll = tunedValue.Gc;
+Gc_roll.InputName = 'e';
+Gc_roll.OutputName = 'u';
 
-T = connect(tt, Gc, Sum, 'r','y', 'u');
+T = connect(tt, Gc_roll, Sum, 'r','y', 'u');
 S = getIOTransfer(T,'u','y');
 
 %% plot results
@@ -50,5 +50,4 @@ step(S, 0.5);
 grid('minor');
 
 %% get discretized controller
-Gcz = c2d(Gc, Ts, 'tustin');
-disp(Gcz)
+Gcz_roll = c2d(Gc_roll, Ts, 'tustin');
