@@ -1,51 +1,54 @@
 %% Design controller
 
-% define the tunable controller
+%% define the tunable controller
 Gc = tunablePID('Gc', 'PID');
 Gc.Kp.Minimum = 0;    Gc.Kp.Maximum = inf;
 Gc.Ki.Minimum = 0;    Gc.Ki.Maximum = inf;
 Gc.Kd.Minimum = 0;    Gc.Kd.Maximum = inf;
-Gc.Tf.Minimum = 2*0.001; Gc.Tf.Maximum = 10*0.001;    % N = 1/Tf
+Gc.Tf.Minimum = 1 * Ts; Gc.Tf.Maximum = 20 * Ts;    % N = 1/Tf
 Gc.TimeUnit = 'seconds';
 Gc.InputName = 'e';
 Gc.OutputName = 'u';
 
-% define requirements
-responsetime = 0.03;
-dcerror = 0.01;
-peakerror = 1.3;
+%% define requirements
+responsetime = 1;
+dcerror = 0.05;
+peakerror = 1.0;
 
 peak = 0.1;
-tSettle = 1;
+tSettle = 0.3;
 
-tt = mech_tf_static * tfu;
-tt.InputName = 'u';
-tt.OutputName = 'y';
-
-d = AnalysisPoint('d');
+%% Create uncertain loop
+tfu.InputName = 'u';
+tfu.OutputName = 'y';
 Sum = sumblk('e = r - y');
-T = connect(tt, Gc, Sum, 'r','y');
-Rtrack_1 = TuningGoal.Tracking('r', 'y', responsetime, dcerror, peakerror);
-Rreject_1 = TuningGoal.StepRejection('d', 'y', getIOTransfer(T,'u', 'y'));
+T = connect(tfu, Gc, Sum,'r','y', 'u');
+Rtrack = TuningGoal.Tracking('r', 'y', responsetime, dcerror, peakerror);
+Rreject = TuningGoal.StepRejection('u', 'y', peak, tSettle);
 
-tuneopts = systuneOptions('RandomStart', 10);
+%% Tune system
+tuneopts = systuneOptions('RandomStart', 5);
 
-Gcl = systune(T, Rtrack_1, Rreject_1, tuneopts);
+Gcl = systune(T, Rtrack, Rreject, tuneopts);
+
 tunedValue = getTunedValue(Gcl);
 Gc = tunedValue.Gc;
 Gc.InputName = 'e';
 Gc.OutputName = 'u';
-T = connect(tt, Gc, Sum, 'r','y');
 
-% plot results
+T = connect(tt, Gc, Sum, 'r','y', 'u');
+S = getIOTransfer(T,'u','y');
+
+%% plot results
 figure('color', 'white');
-%h1 = subplot(2, 1, 1);
-%h2 = subplot(2, 1, 2);
-
-stepplot(T);
-title('Step Response');
+subplot(2,1, 1)
+step(T, 0.5);
+ylim([-0.01, 1.2])
+grid('minor');
+subplot(2,1, 2)
+step(S, 0.5);
 grid('minor');
 
 %% get discretized controller
-
-Gcz = c2d(Gc, 0.001, 'tustin');
+Gcz = c2d(Gc, Ts, 'tustin');
+disp(Gcz)

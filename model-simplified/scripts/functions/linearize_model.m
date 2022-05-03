@@ -21,15 +21,7 @@ opt = findopOptions('DisplayReport','iter');
 ls = cell(1,length(pitch_operating_points));
 op_points_pitch = cell(1,length(pitch_operating_points));
 for i = 1:length(pitch_operating_points)
-   [ls{i}, op_points_pitch{i}] = linearize_pitch(model, pitch_operating_points(i), opt, 0);
-end
-
-%% Discretize models
-
-ld = cell(1, length(pitch_operating_points));
-
-for i = 1:length(pitch_operating_points)
-    ld{i} = c2d(ls{i}, Ts, 'tustin');
+   [ls{i}, op_points_pitch{i}] = linearize_pitch(model, pitch_operating_points(i), opt);
 end
 
 %% plot of poles and zeros
@@ -54,20 +46,54 @@ ylabel('Pitch (deg)')
 title('Step response of linearized pitch model at different operating points')
 subtitle('from pitch torque to pitch angle')
 
-%% print zpk form
+%% Build uncertain system
+
+% print zpk form
 zpk(ls{1})
 zpk(ls{2})
 zpk(ls{3})
 
 ls2_zpk = zpk(ls{2});
 
-mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
-uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
-up = ureal('unstable_pole', 8.074, 'range', [6.796, 8.1]);
+j = 1;
+positive_poles_matrix = [];
+for idx = 1:3
+    i = 1;
+     l = zpk(ls{idx});
+    
+    for p = l.P{1}'
+        if p > 0.0
+            positive_poles_matrix(i, j) = p;
+            i = i + 1;
+        end
+    end
+    j = j + 1;
+end
 
-s = tf('s'); tfu = uss(ls2_zpk.k/ (s^2 - mps^2));
+nominal_pole_index = intersect(...
+    find(positive_poles_matrix ~=(min(positive_poles_matrix))), ...
+    find(positive_poles_matrix ~=(max(positive_poles_matrix)))...
+);
 
-%% print zpk form
+nominal_pole = mean(positive_poles_matrix(nominal_pole_index));
+
+%mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
+%uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
+
+uncertain_stable_p = ureal('stable_p', 10.08, 'range', [10.08 * 0.95, 10.12]);
+uncertain_unstable_p = ureal('unstable_p', nominal_pole, 'range', [min(positive_poles_matrix), max(positive_poles_matrix)]);
+
+s = tf('s'); tfu = uss(2.5717e07*(s+10)/ ((s+1.555e04)*(s+64.28)*(s + uncertain_stable_p) * (s - uncertain_unstable_p)));
+
+%% Discretize models
+
+ld = cell(1, length(pitch_operating_points));
+
+for i = 1:length(pitch_operating_points)
+    ld{i} = c2d(ls{i}, Ts, 'tustin');
+end
+
+% print zpk form
 zpk(ld{1})
 zpk(ld{2})
 zpk(ld{3})
