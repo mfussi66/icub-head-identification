@@ -1,4 +1,4 @@
-
+%% Plot neck data
 tiledlayout(2, 1)
 nexttile
 plot(out.pitch, 'LineWidth', 1.0);

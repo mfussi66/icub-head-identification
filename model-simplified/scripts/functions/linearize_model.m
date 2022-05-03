@@ -9,7 +9,7 @@
 % Generated on: 21-Apr-2022 15:01:24
 
 %% Specify the model name
-model = 'lumped_neck';
+model = 'lumped_neck_with_motor';
 
 pitch_operating_points = [-40, 0, 22]; % degrees
 Ts = 1e-3;
@@ -59,15 +59,13 @@ zpk(ls{1})
 zpk(ls{2})
 zpk(ls{3})
 
-[z, p, k] = zpk(ls{2});
+ls2_zpk = zpk(ls{2});
 
 mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
 uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
 up = ureal('unstable_pole', 8.074, 'range', [6.796, 8.1]);
 
-s = tf('s');
-
-tfu = uss(k * (s - uz)/ ((s^2 - mps^2) * (s - up)));
+s = tf('s'); tfu = uss(ls2_zpk.k/ (s^2 - mps^2));
 
 %% print zpk form
 zpk(ld{1})
