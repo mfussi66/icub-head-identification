@@ -61,14 +61,14 @@ nominal_pole_index = intersect(...
     find(positive_poles_matrix ~=(max(positive_poles_matrix)))...
 );
 
-nominal_pole = mean(positive_poles_matrix(nominal_pole_index));
+nominal_unstable_pole = mean(positive_poles_matrix(nominal_pole_index));
 
-%mps = ureal('mech_poles', 7.79, 'range', [6.426, 8]); % 2 poles: one positive, one negative
-%uz = ureal('unstable_zero', 8.074, 'range', [6.796, 8.1]);
+usp1 = -10.08;
+usp2 = -60.44;
 
-uncertain_stable_p1 = ureal('stable_p1', -10.08, 'range', [-10.12, -10.08 * 0.95]);
-uncertain_stable_p2 = ureal('stable_p2', -60.44, 'range', [-60.47, -60.15]);
-uncertain_unstable_p = ureal('unstable_p', nominal_pole, 'range', [min(positive_poles_matrix), max(positive_poles_matrix)]);
+uncertain_stable_p1 = ureal('stable_p1', usp1, 'percentage', [-35, 35]);
+uncertain_stable_p2 = ureal('stable_p2', usp2, 'percentage', [-35, 35]);
+uncertain_unstable_p = ureal('unstable_p', nominal_unstable_pole, 'percentage', [-35, 35]);
 
 s = tf('s'); tfu_pitch = uss(2.549e07*(s+10)/ ((s+1.587e04)*(s - uncertain_stable_p2)*(s - uncertain_stable_p1) * (s - uncertain_unstable_p)));
 
