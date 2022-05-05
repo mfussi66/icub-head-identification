@@ -24,7 +24,7 @@ function [C, T, Sc] = design_robust_pid(usys, OutputName, Ts,  SoftGoals, HardGo
     Gcl = systune(T, SoftGoals, HardGoals, tuneopts);
     
     tunedValue = getTunedValue(Gcl);
-    C = tunedValue.Gc;
+    C = tunedValue.C;
     C.InputName = 'e';
     C.Outputname = 'tau';
 
