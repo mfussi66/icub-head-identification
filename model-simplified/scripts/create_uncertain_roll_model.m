@@ -61,4 +61,4 @@ uncertain_stable_p2 = ureal('stable_p2', usp2, 'percentage', [-35, 35]);
 uncertain_unstable_p = ureal('unstable_p', nominal_unstable_pole, 'percentage', [-35, 35]);
 
 
-s = tf('s'); tfu_roll = uss(3.0702e07 * (s+10)/ ((s+1.597e04)*(s - uncertain_stable_p1)*(s - uncertain_stable_p2) * (s - uncertain_unstable_p)));
+s = tf('s'); tfu_roll = uss(3.6843e06 * (s+10)/ ((s+1.597e04)*(s - uncertain_stable_p1)*(s - uncertain_stable_p2) * (s - uncertain_unstable_p)));

@@ -60,4 +60,4 @@ uncertain_stable_p1 = ureal('stable_p1', usp1, 'percentage', [-35, 35]);
 uncertain_stable_p2 = ureal('stable_p2', usp2, 'percentage', [-35, 35]);
 uncertain_unstable_p = ureal('unstable_p', nominal_unstable_pole, 'percentage', [-35, 35]);
 
-s = tf('s'); tfu_pitch = uss(2.549e07*(s+10)/ ((s+1.587e04)*(s - uncertain_stable_p2)*(s - uncertain_stable_p1) * (s - uncertain_unstable_p)));
+s = tf('s'); tfu_pitch = uss(3.0588e06*(s+10)/ ((s+1.587e04)*(s - uncertain_stable_p2)*(s - uncertain_stable_p1) * (s - uncertain_unstable_p)));
